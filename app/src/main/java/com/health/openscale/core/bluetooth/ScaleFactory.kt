@@ -19,52 +19,13 @@ package com.health.openscale.core.bluetooth
 
 import android.content.Context
 import com.health.openscale.core.bluetooth.scales.ScaleDeviceHandler
-import com.health.openscale.core.bluetooth.scales.AAAxHandler
-import com.health.openscale.core.bluetooth.scales.ActiveEraBF06Handler
-import com.health.openscale.core.bluetooth.scales.CultSmartScaleProHandler
-import com.health.openscale.core.bluetooth.scales.BeurerSanitasHandler
 import com.health.openscale.core.bluetooth.scales.BroadcastScaleAdapter
-import com.health.openscale.core.bluetooth.scales.CustomOpenScaleHandler
-import com.health.openscale.core.bluetooth.scales.DebugGattHandler
 import com.health.openscale.core.bluetooth.scales.DeviceSupport
-import com.health.openscale.core.bluetooth.scales.DigooDGSO38HHandler
-import com.health.openscale.core.bluetooth.scales.ESCS20MHandler
-import com.health.openscale.core.bluetooth.scales.ExcelvanCF36xHandler
-import com.health.openscale.core.bluetooth.scales.ExingtechY1Handler
-import com.health.openscale.core.bluetooth.scales.EufyC20Handler
-import com.health.openscale.core.bluetooth.scales.EbelterBodyFatB2Handler
-import com.health.openscale.core.bluetooth.scales.EtekcityESF551Handler
 import com.health.openscale.core.bluetooth.scales.GattScaleAdapter
-import com.health.openscale.core.bluetooth.scales.HesleyHandler
-import com.health.openscale.core.bluetooth.scales.HoffenBbs8107Handler
-import com.health.openscale.core.bluetooth.scales.HuaweiAH100Handler
-import com.health.openscale.core.bluetooth.scales.HuaweiCH100SHandler
-import com.health.openscale.core.bluetooth.scales.IHealthHS3Handler
-import com.health.openscale.core.bluetooth.scales.InlifeHandler
 import com.health.openscale.core.bluetooth.scales.LinkMode
-import com.health.openscale.core.bluetooth.scales.MGBHandler
-import com.health.openscale.core.bluetooth.scales.MedisanaBs44xHandler
-import com.health.openscale.core.bluetooth.scales.MiScaleHandler
-import com.health.openscale.core.bluetooth.scales.MiScaleS400Handler
-import com.health.openscale.core.bluetooth.scales.OkOkHandler
-import com.health.openscale.core.bluetooth.scales.OneByoneHandler
-import com.health.openscale.core.bluetooth.scales.OneByoneNewHandler
-import com.health.openscale.core.bluetooth.scales.QNHandler
-import com.health.openscale.core.bluetooth.scales.QNHandlerBroadcast
 import com.health.openscale.core.bluetooth.scales.RealmeSmartScaleHandler
-import com.health.openscale.core.bluetooth.scales.RenphoES26BBHandler
-import com.health.openscale.core.bluetooth.scales.RenphoHandler
-import com.health.openscale.core.bluetooth.scales.RunstarR5Handler
-import com.health.openscale.core.bluetooth.scales.RyFitHandler
-import com.health.openscale.core.bluetooth.scales.SanitasSbf72Handler
-import com.health.openscale.core.bluetooth.scales.SenssunHandler
-import com.health.openscale.core.bluetooth.scales.SinocareHandler
-import com.health.openscale.core.bluetooth.scales.SoehnleHandler
 import com.health.openscale.core.bluetooth.scales.SppScaleAdapter
-import com.health.openscale.core.bluetooth.scales.StandardBeurerSanitasHandler
-import com.health.openscale.core.bluetooth.scales.TrisaBodyAnalyzeHandler
 import com.health.openscale.core.bluetooth.scales.TuningProfile
-import com.health.openscale.core.bluetooth.scales.YunmaiHandler
 import com.health.openscale.core.facade.MeasurementFacade
 import com.health.openscale.core.facade.SettingsFacade
 import com.health.openscale.core.facade.UserFacade
@@ -93,47 +54,7 @@ class ScaleFactory @Inject constructor(
 
     // List of modern Kotlin-based device handlers.
     private val modernKotlinHandlers: List<ScaleDeviceHandler> = listOf(
-        RyFitHandler(),
-        CultSmartScaleProHandler(),
         RealmeSmartScaleHandler(),
-        YunmaiHandler(isMini = false),
-        YunmaiHandler(isMini = true),
-        TrisaBodyAnalyzeHandler(),
-        SanitasSbf72Handler(),
-        StandardBeurerSanitasHandler(),
-        SoehnleHandler(),
-        SinocareHandler(),
-        SenssunHandler(),
-        RenphoHandler(),
-        QNHandlerBroadcast(),
-        QNHandler(),
-        OneByoneHandler(),
-        OneByoneNewHandler(),
-        OkOkHandler(),
-        MiScaleS400Handler(),
-        MiScaleHandler(),
-        RunstarR5Handler(),
-        MGBHandler(),
-        MedisanaBs44xHandler(),
-        InlifeHandler(),
-        IHealthHS3Handler(),
-        HuaweiAH100Handler(),
-        HuaweiCH100SHandler(),
-        HoffenBbs8107Handler(),
-        HesleyHandler(),
-        ExingtechY1Handler(),
-        EbelterBodyFatB2Handler(),
-        ExcelvanCF36xHandler(),
-        EtekcityESF551Handler(),
-        EufyC20Handler(),
-        ESCS20MHandler(),
-        RenphoES26BBHandler(),
-        DigooDGSO38HHandler(),
-        DebugGattHandler(),
-        CustomOpenScaleHandler(),
-        BeurerSanitasHandler(),
-        AAAxHandler(),
-        ActiveEraBF06Handler(),
     )
 
     /**
