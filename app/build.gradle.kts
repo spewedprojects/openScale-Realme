@@ -25,11 +25,11 @@ android {
         applicationId = "com.health.openscale"
         minSdk = 31
         targetSdk = 36
-        versionCode = 75
-        versionName = "3.2.0"
+        versionCode = 76
+        versionName = "3.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["appName"] = "openScale"
+        manifestPlaceholders["appName"] = "openScale RealMe"
         manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_round"
     }
@@ -172,6 +172,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.worker)
     implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.connect.client)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 

@@ -133,6 +133,7 @@ import com.health.openscale.ui.screen.settings.SettingsViewModel
 import com.health.openscale.ui.screen.settings.UserDetailScreen
 import com.health.openscale.ui.screen.settings.UserSettingsScreen
 import com.health.openscale.ui.screen.statistics.StatisticsScreen
+import com.health.openscale.ui.screen.sync.SyncScreen
 import com.health.openscale.ui.screen.table.TableScreen
 import com.health.openscale.ui.theme.AppBrandBlue
 import kotlinx.coroutines.flow.debounce
@@ -177,6 +178,7 @@ fun AppNavigation(sharedViewModel: SharedViewModel) {
         Routes.TABLE,
         Routes.STATISTICS,
         Routes.INSIGHTS,
+        Routes.SYNC,
         Routes.SETTINGS
     )
 
@@ -683,6 +685,11 @@ fun AppNavigation(sharedViewModel: SharedViewModel) {
                             navController = navController,
                             sharedViewModel = sharedViewModel,
                             bluetoothViewModel = bluetoothViewModel,
+                        )
+                    }
+                    composable(Routes.SYNC) {
+                        SyncScreen(
+                            sharedViewModel = sharedViewModel
                         )
                     }
                     composable(Routes.SETTINGS) {

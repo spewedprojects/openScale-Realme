@@ -38,6 +38,7 @@ object Routes {
     const val STATISTICS = "statistics"
     const val INSIGHTS = "insights"
     const val SETTINGS = "settings"
+    const val SYNC = "sync"
 
     const val MEASUREMENT_DETAIL = "measurementDetail" // Not a main navigation item, but a route
 
@@ -94,6 +95,7 @@ object Routes {
         route.startsWith(STATISTICS) -> R.string.route_title_statistics
         route.startsWith(INSIGHTS) -> R.string.route_title_insights
         route.startsWith(SETTINGS) -> R.string.route_title_settings
+        route.startsWith(SYNC) -> R.string.route_title_health_connect_sync
         else -> NO_TITLE_RESOURCE_ID // No specific title for other routes via this function
     }
 
@@ -105,6 +107,7 @@ object Routes {
             STATISTICS -> Icons.Filled.Analytics
             INSIGHTS -> Icons.Filled.Lightbulb
             SETTINGS -> Icons.Filled.Settings
+            SYNC -> Icons.Filled.Analytics // Or something like Sync/Cloud
             else -> Icons.Filled.QuestionMark // Default icon for routes not explicitly handled
         }
     }

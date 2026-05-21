@@ -881,4 +881,5 @@
     <string name="bt_sbf72_choice_slot_other_user">P%1$d: Used by %2$s (Take over?)</string>
     <string name="bt_sbf72_choice_slot_occupied_unmapped">P%1$d: Occupied (Not linked)</string>
     <string name="bt_sbf72_choice_slot_create_new">P%1$d: Create \'%2$s\' here</string>
+    <string name="route_title_health_connect_sync">Health Connect Sync</string>
 </resources>
