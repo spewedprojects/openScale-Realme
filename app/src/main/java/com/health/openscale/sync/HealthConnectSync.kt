@@ -13,6 +13,10 @@ import com.health.openscale.core.model.MeasurementWithValues
 import java.time.Instant
 import java.time.ZoneId
 import com.health.openscale.core.utils.LogManager
+import androidx.health.connect.client.records.BoneMassRecord
+import androidx.health.connect.client.records.LeanBodyMassRecord
+import androidx.health.connect.client.records.BasalMetabolicRateRecord
+import androidx.health.connect.client.units.Power
 
 class HealthConnectSync(private val healthConnectClient: HealthConnectClient) {
 
@@ -28,6 +32,15 @@ class HealthConnectSync(private val healthConnectClient: HealthConnectClient) {
 
             val fatRecord = buildFatRecord(measurement)
             if (fatRecord != null) records.add(fatRecord)
+
+            val boneRecord = buildBoneRecord(measurement)
+            if (boneRecord != null) records.add(boneRecord)
+
+            val lbmRecord = buildLbmRecord(measurement)
+            if (lbmRecord != null) records.add(lbmRecord)
+
+            val bmrRecord = buildBmrRecord(measurement)
+            if (bmrRecord != null) records.add(bmrRecord)
         }
 
         return try {
@@ -92,6 +105,43 @@ class HealthConnectSync(private val healthConnectClient: HealthConnectClient) {
             zoneOffset = zoneOffset,
             percentage = Percentage(fat.toDouble()),
             metadata = buildMetadata(measurement, "fat")
+        )
+    }
+
+    private fun buildBoneRecord(measurement: MeasurementWithValues): BoneMassRecord? {
+        val weight = getFloatValue(measurement, MeasurementTypeKey.WEIGHT) ?: return null
+        val bone = getFloatValue(measurement, MeasurementTypeKey.BONE) ?: return null
+        val measurementInstant = Instant.ofEpochMilli(measurement.measurement.timestamp)
+        val zoneOffset = ZoneId.systemDefault().rules.getOffset(measurementInstant)
+        return BoneMassRecord(
+            time = measurementInstant,
+            zoneOffset = zoneOffset,
+            mass = Mass.kilograms(weight.toDouble() * bone.toDouble() / 100.0),
+            metadata = buildMetadata(measurement, "bone")
+        )
+    }
+
+    private fun buildLbmRecord(measurement: MeasurementWithValues): LeanBodyMassRecord? {
+        val lbm = getFloatValue(measurement, MeasurementTypeKey.LBM) ?: return null
+        val measurementInstant = Instant.ofEpochMilli(measurement.measurement.timestamp)
+        val zoneOffset = ZoneId.systemDefault().rules.getOffset(measurementInstant)
+        return LeanBodyMassRecord(
+            time = measurementInstant,
+            zoneOffset = zoneOffset,
+            mass = Mass.kilograms(lbm.toDouble()),
+            metadata = buildMetadata(measurement, "lbm")
+        )
+    }
+
+    private fun buildBmrRecord(measurement: MeasurementWithValues): BasalMetabolicRateRecord? {
+        val bmr = getFloatValue(measurement, MeasurementTypeKey.BMR) ?: return null
+        val measurementInstant = Instant.ofEpochMilli(measurement.measurement.timestamp)
+        val zoneOffset = ZoneId.systemDefault().rules.getOffset(measurementInstant)
+        return BasalMetabolicRateRecord(
+            time = measurementInstant,
+            zoneOffset = zoneOffset,
+            basalMetabolicRate = Power.kilocaloriesPerDay(bmr.toDouble()),
+            metadata = buildMetadata(measurement, "bmr")
         )
     }
 }

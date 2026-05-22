@@ -802,8 +802,8 @@
     <string name="bluetooth_scale_info_measuring_weight">Measuring weight: %.2f</string>
     <string name="bluetooth_scale_error_max_users_reached">Max. number of concurrent scale users reached</string>
 
-    <string name="permission_read_write_data_description">read/write openScale data, including user information and all saved measurements</string>
-    <string name="permission_read_write_data_label">Read and Write openScale data</string>
+    <string name="permission_read_write_data_description">Write openScale data, including user information and all saved measurements</string>
+    <string name="permission_read_write_data_label">Write openScale data</string>
 
     <string name="dialog_bt_interaction_title_choose_user">Select User on Scale</string>
     <string name="dialog_bt_interaction_desc_choose_user_default">Select your user from the list or create a new one.</string>

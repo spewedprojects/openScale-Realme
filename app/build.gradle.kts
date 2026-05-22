@@ -25,8 +25,8 @@ android {
         applicationId = "com.health.openscale"
         minSdk = 31
         targetSdk = 36
-        versionCode = 76
-        versionName = "3.3.0"
+        versionCode = 77
+        versionName = "3.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "openScale RealMe"

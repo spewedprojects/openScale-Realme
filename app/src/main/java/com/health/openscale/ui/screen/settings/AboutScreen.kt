@@ -96,6 +96,7 @@ fun AboutScreen(
 
     val projectHomepageUrl = "https://github.com/oliexdev/openScale"
     val licenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html"
+    val forkedprojectHomepageUrl = "https://github.com/spewedprojects/openScale-Realme"
 
     LaunchedEffect(Unit) {
         sharedViewModel.setTopBarTitle(context.getString(R.string.about_screen_title))
@@ -153,11 +154,25 @@ fun AboutScreen(
             leadingIconContentDescription = stringResource(R.string.maintainer_icon_content_description)
         )
         InfoListItem(
+            headlineText = "spewedprojects",
+            supportingText = "Fork maintainer",
+            leadingIconVector = Icons.Filled.Business,
+            leadingIconContentDescription = stringResource(R.string.maintainer_icon_content_description)
+        )
+        InfoListItem(
             headlineText = stringResource(R.string.project_homepage_display),
             supportingText = stringResource(R.string.official_project_page_label),
             leadingIconVector = Icons.Filled.Home,
             leadingIconContentDescription = stringResource(R.string.homepage_icon_content_description),
             url = projectHomepageUrl,
+            uriHandler = uriHandler
+        )
+        InfoListItem(
+            headlineText = stringResource(R.string.project_homepage_display),
+            supportingText = stringResource(R.string.official_project_page_label),
+            leadingIconVector = Icons.Filled.Home,
+            leadingIconContentDescription = stringResource(R.string.homepage_icon_content_description),
+            url = forkedprojectHomepageUrl,
             uriHandler = uriHandler
         )
         InfoListItem(
