@@ -168,7 +168,7 @@ fun AboutScreen(
             uriHandler = uriHandler
         )
         InfoListItem(
-            headlineText = stringResource(R.string.project_homepage_display),
+            headlineText = "Fork Project on GitHub",
             supportingText = stringResource(R.string.official_project_page_label),
             leadingIconVector = Icons.Filled.Home,
             leadingIconContentDescription = stringResource(R.string.homepage_icon_content_description),

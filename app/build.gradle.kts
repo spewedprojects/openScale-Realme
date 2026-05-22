@@ -25,8 +25,8 @@ android {
         applicationId = "com.health.openscale"
         minSdk = 31
         targetSdk = 36
-        versionCode = 77
-        versionName = "3.3.1"
+        versionCode = 78
+        versionName = "3.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "openScale RealMe"
@@ -212,9 +212,6 @@ dependencies {
 
     // Blessed Kotlin
     implementation(libs.blessed.kotlin)
-
-    // BouncyCastle for AES-CCM decryption (Xiaomi S400 scale)
-    implementation(libs.bouncycastle)
 
     // Test dependencies
     testImplementation(libs.junit)

@@ -11,8 +11,8 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 76,
-      "versionName": "3.3.0",
+      "versionCode": 78,
+      "versionName": "3.3.2",
       "outputFile": "openScale-release.apk"
     }
   ],
