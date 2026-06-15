@@ -1,5 +1,6 @@
 [versions]
-agp = "9.1.0"
+agp = "9.1.1"
+connectClient = "1.1.0"
 kotlin = "2.4.0"
 coreKtx = "1.19.0"
 junit = "4.13.2"
@@ -32,6 +33,7 @@ androidxTestCore = "1.7.0"
 
 
 [libraries]
+androidx-connect-client = { module = "androidx.health.connect:connect-client", version.ref = "connectClient" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

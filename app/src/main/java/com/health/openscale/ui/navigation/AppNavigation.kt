@@ -139,7 +139,8 @@ fun AppNavigation(sharedViewModel: SharedViewModel) {
         Routes.TABLE,
         Routes.STATISTICS,
         Routes.INSIGHTS,
-        Routes.SETTINGS
+        Routes.SETTINGS,
+        Routes.SYNC
     )
 
     // Collect UI states from SharedViewModel

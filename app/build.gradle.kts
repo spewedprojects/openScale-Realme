@@ -28,9 +28,9 @@ android {
     defaultConfig {
         applicationId = "com.health.openscale"
         minSdk = 31
-        targetSdk = 36
-        versionCode = 75
-        versionName = "3.1.1"
+        targetSdk = 37
+        versionCode = 79
+        versionName = "3.1.1-Realme-1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "openScale RealMe"
@@ -203,6 +203,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.worker)
     implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.connect.client)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 

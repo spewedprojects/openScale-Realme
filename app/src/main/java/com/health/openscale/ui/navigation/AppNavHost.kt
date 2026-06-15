@@ -54,6 +54,7 @@ import com.health.openscale.ui.screen.settings.SettingsViewModel
 import com.health.openscale.ui.screen.settings.UserDetailScreen
 import com.health.openscale.ui.screen.settings.UserSettingsScreen
 import com.health.openscale.ui.screen.statistics.StatisticsScreen
+import com.health.openscale.ui.screen.sync.SyncScreen
 import com.health.openscale.ui.screen.table.TableScreen
 import com.health.openscale.ui.shared.SharedViewModel
 
@@ -148,6 +149,12 @@ fun AppNavHost(
                     navController = navController,
                     sharedViewModel = sharedViewModel,
                     settingsViewModel = settingsViewModel
+                )
+            }
+            // These settings have been moved to a separate class - AppNavHost.
+            composable(Routes.SYNC) {
+                SyncScreen(
+                    sharedViewModel = sharedViewModel
                 )
             }
             composable(Routes.GENERAL_SETTINGS) {
