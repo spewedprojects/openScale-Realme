@@ -21,6 +21,7 @@ import com.health.openscale.core.data.User
 import com.health.openscale.core.database.DatabaseRepository
 import com.health.openscale.core.facade.SettingsFacade
 import com.health.openscale.core.model.UserEvaluationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -70,6 +71,7 @@ class UserUseCases @Inject constructor(
     }
 
     /** Observe the currently selected user object (may be null). */
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun observeSelectedUser(): Flow<User?> =
         observeSelectedUserId().flatMapLatest { id ->
             if (id == null) flowOf(null) else observeUserById(id)
@@ -125,9 +127,9 @@ class UserUseCases @Inject constructor(
 
     /** Delete all measurements for the given user. Returns number of deleted rows. */
     suspend fun purgeMeasurementsForUser(userId: Int): Result<Int> = runCatching {
-        sync.triggerSyncClear("com.health.openscale.sync")
-        sync.triggerSyncClear("com.health.openscale.sync.oss")
-        sync.triggerSyncClear("com.health.openscale.sync.debug")
+        sync.triggerSyncClear(userId, "com.health.openscale.sync")
+        sync.triggerSyncClear(userId, "com.health.openscale.sync.oss")
+        sync.triggerSyncClear(userId, "com.health.openscale.sync.debug")
         databaseRepository.deleteAllMeasurementsForUser(userId)
     }
 

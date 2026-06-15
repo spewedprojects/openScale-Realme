@@ -1,3 +1,4 @@
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
@@ -7,26 +8,29 @@ import java.util.TimeZone
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
-    id("kotlin-kapt")
+    alias(libs.plugins.ksp)
 }
 
 hilt {
     enableAggregatingTask = false
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.health.openscale"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.health.openscale"
         minSdk = 31
         targetSdk = 36
-        versionCode = 78
-        versionName = "3.3.2"
+        versionCode = 75
+        versionName = "3.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "openScale RealMe"
@@ -45,7 +49,7 @@ android {
                     keystoreProperties.load(fis)
                 }
                 propertiesLoaded = true
-            } catch (e: FileNotFoundException) {
+            } catch (_: FileNotFoundException) {
                 project.logger.warn("Keystore properties file not found: ${keystorePropertiesFile.absolutePath}. Release signing might fail if not configured via environment variables.")
                 propertiesLoaded = false
             }
@@ -70,7 +74,7 @@ android {
                     keystoreOSSProperties.load(fis)
                 }
                 propertiesLoaded = true
-            } catch (e: FileNotFoundException) {
+            } catch (_: FileNotFoundException) {
                 project.logger.warn("OSS Keystore properties file not found: ${keystoreOSSPropertiesFile.absolutePath}. OSS signing might fail if not configured via environment variables.")
                 propertiesLoaded = false
             }
@@ -102,6 +106,7 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -129,33 +134,59 @@ android {
         }
     }
 
-    applicationVariants.all {
-        val variant = this
-        outputs.all {
-            val output = this
-            if (output is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                output.outputFileName = "openScale-${variant.buildType.name}.apk"
-            }
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    kapt {
-        arguments {
-            arg("room.schemaLocation", "$projectDir/schemas")
-        }
-        correctErrorTypes = true
     }
 
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        // JVM unit tests touch android.util.Log (via LogManager); return defaults
+        // instead of throwing "not mocked" so pure-logic tests can run on the JVM.
+        unitTests.isReturnDefaultValues = true
+    }
 }
+
+androidComponents {
+    onVariants { variant ->
+        // Include the version number for every build type except debug.
+        val baseName = if (variant.buildType == "debug") {
+            "openScale-${variant.buildType}"
+        } else {
+            "openScale-${android.defaultConfig.versionName}-${variant.buildType}"
+        }
+
+        // APK naming. outputFileName is the official replacement for the removed
+        // applicationVariants API but still marked @Incubating in AGP 9.
+//        @Suppress("UnstableApiUsage")
+//        variant.outputs.forEach { output ->
+//            output.outputFileName.set("$baseName.apk")
+//        }
+
+        // AAB naming: the outputs API above only covers APKs, so rename the
+        // bundle output once the bundle<Variant> task has produced it.
+        val bundleTaskName = "bundle${variant.name.replaceFirstChar { it.uppercase() }}"
+        tasks.matching { it.name == bundleTaskName }.configureEach {
+            doLast {
+                val bundleDir = layout.buildDirectory
+                    .dir("outputs/bundle/${variant.name}").get().asFile
+                bundleDir.listFiles { _, name -> name.endsWith(".aab") }
+                    ?.forEach { aab ->
+                        val target = File(bundleDir, "$baseName.aab")
+                        if (aab != target) {
+                            target.delete()
+                            aab.renameTo(target)
+                        }
+                    }
+            }
+        }
+    }
+}
+
 
 dependencies {
 
@@ -172,23 +203,22 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.worker)
     implementation(libs.androidx.documentfile)
-    implementation(libs.androidx.connect.client)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.datastore.preferences)
 
     // Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.work)
-    kapt(libs.hilt.androidx.compiler)
+    ksp(libs.hilt.androidx.compiler)
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
@@ -221,6 +251,12 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    // JVM-runnable Android/Room tests (no emulator needed)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
 }
 
 fun safeExec(vararg cmd: String): String = try {

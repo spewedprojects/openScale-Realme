@@ -1,6 +1,8 @@
 <resources>
     <!-- App & General -->
-    <string name="app_name" translatable="false">openScale RealMe</string>
+    <string name="app_name" translatable="false">openScale</string>
+    <string name="sync_app_unreachable_hint">Last change wasn\'t synchronized. Please open openScale-sync and run a manual sync.</string>
+    <string name="sync_app_open_action">Open</string>
     <string name="app_logo_content_description">App Logo</string>
     <string name="text_none">None</string>
     <string name="not_available">N/A</string>
@@ -69,6 +71,7 @@
     <string name="user_deleted_successfully">User %1$s was deleted successfully.</string>
     <string name="user_deleted_error">Error deleting user %1$s.</string>
     <string name="user_updated_successfully">User %1$s updated successfully.</string>
+    <string name="user_added_successfully">User %1$s added successfully.</string>
     <string name="user_updated_error">Error updating user %1$s.</string>
     <string name="user_detail_label_name">Name</string>
     <string name="user_detail_label_height">Height</string>
@@ -103,11 +106,19 @@
     <string name="user_detail_content_description_change_unit">Change unit</string>
 
     <!-- Measurement CRUD & Operations -->
-    <string name="success_measurement_updated">Measurement successfully updated</string>
-    <string name="success_measurement_saved">Measurement successfully saved</string>
-    <string name="error_saving_measurement">Error saving measurement</string>
-    <string name="success_measurement_deleted">Measurement %1$s successfully deleted</string>
-    <string name="error_deleting_measurement">Error deleting measurement</string>
+    <string name="success_measurement_updated">Measurement updated (%1$s)</string> <!-- %1$s is date/time -->
+    <string name="success_measurement_saved">Measurement saved (%1$s)</string> <!-- %1$s is date/time -->
+    <string name="error_saving_measurement">Couldn\'t save measurement. Please try again.</string>
+    <string name="error_duplicate_timestamp">Not saved — a measurement already exists at %1$s.</string> <!-- %1$s is date/time -->
+    <string name="success_measurement_deleted">Measurement deleted (%1$s)</string> <!-- %1$s is date/time -->
+    <string name="error_deleting_measurement">Couldn\'t delete measurement. Please try again.</string>
+    <string name="action_undo">Undo</string>
+    <string name="cd_chart_handle_resize">Drag to resize the chart, or tap to collapse it</string>
+    <string name="cd_chart_handle_show">Tap to show the chart</string>
+    <string name="dialog_title_discard_changes">Discard changes?</string>
+    <string name="dialog_message_discard_changes">Your changes haven\'t been saved and will be lost.</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_keep_editing">Keep editing</string>
     <string name="action_save_measurement">Save measurement</string>
     <string name="action_add_measurement">Add Measurement</string>
     <string name="action_add_measurement_desc">Add new measurement</string>
@@ -174,6 +185,18 @@
     <string name="measurement_type_fat_caliper">Fat Caliper</string>
     <string name="measurement_type_bmr">BMR</string>
     <string name="measurement_type_heart_rate">Heart Rate</string>
+    <string name="measurement_type_impedance">Impedance (high)</string>
+    <string name="measurement_type_impedance_low">Impedance (low)</string>
+    <string name="measurement_type_ecw">Extracellular water</string>
+    <string name="measurement_type_icw">Intracellular water</string>
+    <string name="measurement_type_protein">Protein</string>
+    <string name="measurement_type_bcm">Body cell mass</string>
+    <string name="s400_bone_formula_label">Bone formula</string>
+    <string name="s400_bone_formula_mi_legacy">Impedance-based regression (Legacy)</string>
+    <string name="s400_bone_formula_heymsfield">Heymsfield (anthropometric)</string>
+    <string name="s400_bmr_formula_label">BMR formula</string>
+    <string name="s400_bmr_formula_cun91">Cunningham 1991</string>
+    <string name="s400_bmr_formula_cun80">Cunningham 1980</string>
     <string name="measurement_type_tdee">TDEE</string>
     <string name="measurement_type_calories">Calories</string>
     <string name="measurement_type_comment">Comment</string>
@@ -483,12 +506,12 @@
     <string name="dialog_message_delete_selected_items">Are you sure you want to delete the selected %1$d items? This action cannot be undone.</string>
     <string name="dialog_title_delete_type">Delete Type?</string>
     <string name="dialog_text_delete_type">Are you sure you want to delete the custom type “%1$s”? All associated measurements will also be permanently deleted. This action cannot be undone.</string>
-    <string name="snackbar_items_deleted_successfully">%1$d items deleted successfully.</string>
-    <string name="snackbar_error_deleting_items">Error deleting items.</string>
+    <string name="snackbar_items_deleted_successfully">%1$d measurements deleted</string>
+    <string name="snackbar_items_delete_partial_failure">Couldn\'t delete %1$d of %2$d measurements.</string>
     <string name="dialog_title_select_user_for_assignment">Select User for Assignment</string>
     <string name="snackbar_no_other_users_to_change_to">No other users available to change to.</string>
-    <string name="snackbar_items_user_changed_successfully">User changed for %1$d items successfully.</string>
-    <string name="snackbar_error_user_changed_items">Error changing user for some items.</string>
+    <string name="snackbar_items_user_changed_successfully">%1$d measurements moved</string>
+    <string name="snackbar_items_move_partial_failure">Couldn\'t move %1$d of %2$d measurements (already exist for that user).</string>
 
     <!-- Insights Screen -->
     <string name="insights_confidence_low">Limited data</string>
@@ -802,8 +825,8 @@
     <string name="bluetooth_scale_info_measuring_weight">Measuring weight: %.2f</string>
     <string name="bluetooth_scale_error_max_users_reached">Max. number of concurrent scale users reached</string>
 
-    <string name="permission_read_write_data_description">Write openScale data, including user information and all saved measurements</string>
-    <string name="permission_read_write_data_label">Write openScale data</string>
+    <string name="permission_read_write_data_description">read/write openScale data, including user information and all saved measurements</string>
+    <string name="permission_read_write_data_label">Read and Write openScale data</string>
 
     <string name="dialog_bt_interaction_title_choose_user">Select User on Scale</string>
     <string name="dialog_bt_interaction_desc_choose_user_default">Select your user from the list or create a new one.</string>
@@ -881,5 +904,4 @@
     <string name="bt_sbf72_choice_slot_other_user">P%1$d: Used by %2$s (Take over?)</string>
     <string name="bt_sbf72_choice_slot_occupied_unmapped">P%1$d: Occupied (Not linked)</string>
     <string name="bt_sbf72_choice_slot_create_new">P%1$d: Create \'%2$s\' here</string>
-    <string name="route_title_health_connect_sync">Health Connect Sync</string>
 </resources>

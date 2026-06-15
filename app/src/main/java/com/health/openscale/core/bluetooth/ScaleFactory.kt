@@ -19,10 +19,13 @@ package com.health.openscale.core.bluetooth
 
 import android.content.Context
 import com.health.openscale.core.bluetooth.scales.ScaleDeviceHandler
+import com.health.openscale.core.bluetooth.scales.CultSmartScaleProHandler
 import com.health.openscale.core.bluetooth.scales.BroadcastScaleAdapter
+import com.health.openscale.core.bluetooth.scales.CustomOpenScaleHandler
 import com.health.openscale.core.bluetooth.scales.DeviceSupport
 import com.health.openscale.core.bluetooth.scales.GattScaleAdapter
 import com.health.openscale.core.bluetooth.scales.LinkMode
+import com.health.openscale.core.bluetooth.scales.OkOkHandler
 import com.health.openscale.core.bluetooth.scales.RealmeSmartScaleHandler
 import com.health.openscale.core.bluetooth.scales.SppScaleAdapter
 import com.health.openscale.core.bluetooth.scales.TuningProfile
@@ -38,6 +41,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Factory class responsible for creating appropriate [ScaleCommunicator] instances
@@ -45,7 +49,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class ScaleFactory @Inject constructor(
-    @ApplicationContext private val applicationContext: Context,
+    @param:ApplicationContext private val applicationContext: Context,
     private val settingsFacade: SettingsFacade,
     private val measurementFacade: MeasurementFacade,
     private val userFacade: UserFacade,
@@ -53,8 +57,13 @@ class ScaleFactory @Inject constructor(
     private val TAG = "ScaleHandlerFactory"
 
     // List of modern Kotlin-based device handlers.
+    // Order matters: createCommunicator() returns the FIRST handler whose supportFor() is non-null.
+    // TaylorBIAHandler must stay ahead of MGBHandler — both live on service 0xFFB0, and MGBHandler
+    // also matches that service, so a later position would let MGB wrongly claim the Taylor scale.
     private val modernKotlinHandlers: List<ScaleDeviceHandler> = listOf(
+        CultSmartScaleProHandler(),
         RealmeSmartScaleHandler(),
+        OkOkHandler()
     )
 
     /**
@@ -74,7 +83,7 @@ class ScaleFactory @Inject constructor(
         val effectiveTuning: TuningProfile = run {
             val saved: String? = runCatching {
                 runBlocking(Dispatchers.IO) {
-                    withTimeout(250) {
+                    withTimeout(250.milliseconds) {
                         settingsFacade.savedBluetoothTuneProfile.firstOrNull()
                     }
                 }
@@ -124,7 +133,7 @@ class ScaleFactory @Inject constructor(
      * @return A [ScaleCommunicator] instance if a suitable handler or adapter is found, otherwise null.
      */
     fun createCommunicator(deviceInfo: ScannedDeviceInfo): ScaleCommunicator? {
-        val primaryIdentifier = deviceInfo.name ?: "UnknownDevice"
+        val primaryIdentifier = deviceInfo.name
         LogManager.d(TAG, "createCommunicator: Searching for communicator for '${primaryIdentifier}' (${deviceInfo.address}). Handler hint: '${deviceInfo.determinedHandlerDisplayName}'")
 
         // 1. Check if a modern Kotlin handler explicitly supports the device.

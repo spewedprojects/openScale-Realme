@@ -63,7 +63,8 @@ data class ImportReport(
  */
 @Singleton
 class ImportExportUseCases @Inject constructor(
-    private val repository: DatabaseRepository
+    private val repository: DatabaseRepository,
+    private val sync: SyncUseCases
 ) {
 
     private val TAG = "ImportExportUseCase"
@@ -260,7 +261,9 @@ class ImportExportUseCases @Inject constructor(
                                             (t.name?.equals(colName, ignoreCase = true) == true)
                                 }
                             }
-                            if (matched != null && matched.isEnabled) {
+                            // Internal raw inputs (e.g. impedance bands) are disabled by
+                            // default but must still be importable for re-derivation.
+                            if (matched != null && (matched.isEnabled || matched.isInternal)) {
                                 valueColumnMap[colIdx] = matched
                                 LogManager.d(TAG, "Header map: '$colName' -> ${matched.key} (id=${matched.id})")
                             }
@@ -380,6 +383,9 @@ class ImportExportUseCases @Inject constructor(
                         LogManager.e(TAG, "Derived recalculation failed for measurementId=$id", e)
                     }
                 }
+
+                // Bulk import: one coalesced "changed" wake-up instead of N per-measurement events.
+                sync.triggerSyncChangedAll()
             }
         }
 

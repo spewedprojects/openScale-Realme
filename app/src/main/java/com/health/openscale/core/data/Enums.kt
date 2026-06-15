@@ -18,7 +18,6 @@
 package com.health.openscale.core.data
 
 import android.content.Context
-import android.text.InputType
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -34,11 +33,11 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Bloodtype
+import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.DeviceThermostat
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Egg
@@ -49,6 +48,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.Height
+import androidx.compose.material.icons.filled.Hive
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalDining
 import androidx.compose.material.icons.filled.LocalDrink
@@ -59,23 +59,22 @@ import androidx.compose.material.icons.filled.OilBarrel
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.QuestionMark
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.ScatterPlot
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SentimentSatisfied
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.SentimentVerySatisfied
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SquareFoot
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.health.openscale.R
 import java.time.DayOfWeek
@@ -154,14 +153,14 @@ enum class SupportedLanguage(val code: String, val nativeDisplayName: String) {
     }
 }
 
-enum class GenderType(@StringRes val displayNameResId: Int) {
+enum class GenderType(@param:StringRes val displayNameResId: Int) {
     MALE(R.string.gender_male),
     FEMALE(R.string.gender_female);
 
     fun isMale(): Boolean {
         return this == MALE}
 
-    fun getDisplayName(context: android.content.Context): String {
+    fun getDisplayName(context: Context): String {
         return context.getString(displayNameResId)
     }
 }
@@ -213,19 +212,9 @@ enum class WeightUnit {
             KG -> return 0
         }
     }
-
-    companion object {
-        fun fromInt(unit: Int): WeightUnit {
-            when (unit) {
-                1 -> return LB
-                2 -> return ST
-            }
-            return KG
-        }
-    }
 }
 
-enum class Limb(@StringRes val displayNameResId: Int) {
+enum class Limb(@param:StringRes val displayNameResId: Int) {
     LEFT_ARM(R.string.amputation_left_arm),
     RIGHT_ARM(R.string.amputation_right_arm),
     LEFT_LEG(R.string.amputation_left_leg),
@@ -233,7 +222,7 @@ enum class Limb(@StringRes val displayNameResId: Int) {
 }
 
 enum class AmputationPart(
-    @StringRes val displayNameResId: Int,
+    @param:StringRes val displayNameResId: Int,
     val correctionValue: Float
 ) {
     HAND(R.string.amputation_hand, 0.8f),
@@ -278,20 +267,10 @@ enum class MeasureUnit {
             INCH -> return 1
         }
     }
-
-    companion object {
-        fun fromInt(unit: Int): MeasureUnit {
-            when (unit) {
-                0 -> return CM
-                1 -> return INCH
-            }
-            return CM
-        }
-    }
 }
 
 sealed class IconResource {
-    data class PainterResource(@DrawableRes val id: Int) : IconResource()
+    data class PainterResource(@param:DrawableRes val id: Int) : IconResource()
     data class VectorResource(val imageVector: ImageVector) : IconResource()
 }
 
@@ -375,12 +354,16 @@ enum class MeasurementTypeIcon(val resource: IconResource) {
     IC_M_MEDICATION(IconResource.VectorResource(Icons.Filled.Medication)),
     IC_M_LIST(IconResource.VectorResource(Icons.AutoMirrored.Filled.List)),
     IC_M_LABEL(IconResource.VectorResource(Icons.AutoMirrored.Filled.Label)),
-    IC_M_PERSON(IconResource.VectorResource(Icons.Filled.Person));
+    IC_M_PERSON(IconResource.VectorResource(Icons.Filled.Person)),
+    IC_M_WATER_DROP(IconResource.VectorResource(Icons.Filled.WaterDrop)),
+    IC_M_SCATTER_PLOT(IconResource.VectorResource(Icons.Filled.ScatterPlot)),
+    IC_M_BUBBLE_CHART(IconResource.VectorResource(Icons.Filled.BubbleChart)),
+    IC_M_HIVE(IconResource.VectorResource(Icons.Filled.Hive));
 }
 
 enum class MeasurementTypeKey(
     val id: Int,
-    @StringRes val localizedNameResId: Int,
+    @param:StringRes val localizedNameResId: Int,
     val allowedUnitTypes: List<UnitType>,
     val allowedInputType: List<InputFieldType>
 ) {
@@ -412,6 +395,12 @@ enum class MeasurementTypeKey(
     TIME(26, R.string.measurement_type_time, listOf(UnitType.NONE), listOf(InputFieldType.TIME)),
     COMMENT(27, R.string.measurement_type_comment, listOf(UnitType.NONE), listOf(InputFieldType.TEXT)),
     USER(28, R.string.measurement_type_user, listOf(UnitType.NONE), listOf(InputFieldType.USER)),
+    IMPEDANCE(29, R.string.measurement_type_impedance, listOf(UnitType.OHM), listOf(InputFieldType.FLOAT)),
+    IMPEDANCE_LOW(30, R.string.measurement_type_impedance_low, listOf(UnitType.OHM), listOf(InputFieldType.FLOAT)),
+    ECW(31, R.string.measurement_type_ecw, listOf(UnitType.PERCENT, UnitType.KG, UnitType.LB, UnitType.ST), listOf(InputFieldType.FLOAT)),
+    ICW(32, R.string.measurement_type_icw, listOf(UnitType.PERCENT, UnitType.KG, UnitType.LB, UnitType.ST), listOf(InputFieldType.FLOAT)),
+    PROTEIN(33, R.string.measurement_type_protein, listOf(UnitType.PERCENT, UnitType.KG, UnitType.LB, UnitType.ST), listOf(InputFieldType.FLOAT)),
+    BCM(34, R.string.measurement_type_bcm, listOf(UnitType.KG, UnitType.LB, UnitType.ST), listOf(InputFieldType.FLOAT)),
     CUSTOM(99, R.string.measurement_type_custom_default_name, UnitType.entries.toList(), listOf(InputFieldType.FLOAT, InputFieldType.INT, InputFieldType.TEXT, InputFieldType.DATE, InputFieldType.TIME));
 }
 
@@ -425,6 +414,7 @@ enum class UnitType(val displayName: String) {
     INCH("in"),
     KCAL("kcal"),
     BPM("bpm"),
+    OHM("Ω"),
     NONE("");
 
     fun isWeightUnit(): Boolean {
@@ -453,19 +443,19 @@ enum class Trend {
     UP, DOWN, NONE, NOT_APPLICABLE
 }
 
-enum class TimeRangeFilter(@StringRes val displayNameResId: Int) {
+enum class TimeRangeFilter(@param:StringRes val displayNameResId: Int) {
     ALL_DAYS(R.string.time_range_all_days),
     LAST_7_DAYS(R.string.time_range_last_7_days),
     LAST_30_DAYS(R.string.time_range_last_30_days),
     LAST_365_DAYS(R.string.time_range_last_365_days),
     CUSTOM(R.string.time_range_custom);
 
-    fun getDisplayName(context: android.content.Context): String {
+    fun getDisplayName(context: Context): String {
         return context.getString(displayNameResId)
     }
 }
 
-enum class AggregationLevel(@StringRes val displayNameResId: Int) {
+enum class AggregationLevel(@param:StringRes val displayNameResId: Int) {
     NONE(R.string.aggregation_level_none),
     DAY(R.string.aggregation_level_day),
     WEEK(R.string.aggregation_level_week),
@@ -554,17 +544,17 @@ enum class AggregationLevel(@StringRes val displayNameResId: Int) {
 
 }
 
-enum class SmoothingAlgorithm(@StringRes val displayNameResId: Int) {
+enum class SmoothingAlgorithm(@param:StringRes val displayNameResId: Int) {
     NONE(R.string.smoothing_algorithm_none),
     SIMPLE_MOVING_AVERAGE(R.string.smoothing_algorithm_sma),
     EXPONENTIAL_SMOOTHING(R.string.smoothing_algorithm_ses);
 
-    fun getDisplayName(context: android.content.Context): String {
+    fun getDisplayName(context: Context): String {
         return context.getString(displayNameResId)
     }
 }
 
-enum class PolynomialDegree(val degree: Int, @StringRes val displayNameRes: Int) {
+enum class PolynomialDegree(val degree: Int, @param:StringRes val displayNameRes: Int) {
     LINEAR(1, R.string.poly_degree_linear),
     QUADRATIC(2, R.string.poly_degree_quadratic),
     CUBIC(3, R.string.poly_degree_cubic);
@@ -614,8 +604,6 @@ enum class EvaluationState {
 enum class ConnectionStatus {
     /** No BT flow started yet. */
     NONE,
-    /** Ready but not connected; idle state after init or after a clean stop. */
-    IDLE,
     BROADCAST_LISTENING,
     /** Explicitly not connected (after a disconnect or failure). */
     DISCONNECTED,

@@ -44,6 +44,7 @@ import com.health.openscale.core.model.MeasurementInsight
 import com.health.openscale.core.model.MeasurementWithValues
 import com.health.openscale.core.model.UserEvaluationContext
 import com.health.openscale.core.usecase.MeasurementDemoUseCase
+import com.health.openscale.core.usecase.SyncUseCases
 import com.health.openscale.core.utils.LogManager
 import com.health.openscale.ui.screen.components.AGGREGATION_LEVEL_SUFFIX
 import com.health.openscale.ui.screen.components.CUSTOM_END_DATE_MILLIS_SUFFIX
@@ -72,8 +73,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 import java.text.DateFormat
-import java.time.LocalDate
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -97,7 +98,22 @@ class SharedViewModel @Inject constructor(
     private val measurementFacade: MeasurementFacade,
     private val dataManagementFacade: DataManagementFacade,
     private val settingsFacade: SettingsFacade,
+    private val sync: SyncUseCases,
 ) : ViewModel(), SettingsFacade by settingsFacade {
+
+    // When openScale can't wake an installed-but-force-stopped sync app, nudge the user to open it.
+    init {
+        viewModelScope.launch {
+            sync.syncAppUnreachable.collect { pkg ->
+                showSnackbar(
+                    messageResId = R.string.sync_app_unreachable_hint,
+                    duration = SnackbarDuration.Long,
+                    actionLabelResId = R.string.sync_app_open_action,
+                    onAction = { sync.openSyncApp(pkg) }
+                )
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "SharedViewModel"
@@ -417,7 +433,7 @@ class SharedViewModel @Inject constructor(
     /**
      * Emits a fully computed [MeasurementInsight] for the currently selected user.
      * Reacts automatically to user switches, measurement data changes, and primary
-     * type selection changes from [insightsPrimaryTypeIdFlow].
+     * type selection changes from insightsPrimaryTypeIdFlow.
      *
      * The computation is dispatched to [kotlinx.coroutines.Dispatchers.Default] inside
      * [MeasurementFacade.insightsForUser] to keep the main thread free.
@@ -492,7 +508,7 @@ class SharedViewModel @Inject constructor(
      * Resolves a [TimeRangeFilter] into concrete start/end epoch-millisecond bounds.
      * Returns `null` for an open bound (no filter applied on that side).
      *
-     * Previously this logic was spread across [rememberResolvedTimeRangeState] in
+     * Previously this logic was spread across rememberResolvedTimeRangeState in
      * multiple Composables. Keeping it here makes it testable without Android instrumentation.
      */
     private fun resolveTimeRange(
@@ -541,7 +557,7 @@ class SharedViewModel @Inject constructor(
      * Used by drill-down screens that show the individual measurements within a period.
      *
      * The flow is cached per (startMillis, endMillis) pair so repeated calls from
-     * recompositions or from [resolveSelectedMeasurementIds] are free after the first access.
+     * recompositions or from resolveSelectedMeasurementIds are free after the first access.
      *
      * Each [AggregatedMeasurement] in the result has [AggregatedMeasurement.aggregatedFromCount] == 1.
      */
@@ -670,42 +686,135 @@ class SharedViewModel @Inject constructor(
     fun getMeasurementById(id: Int): Flow<MeasurementWithValues?> =
         measurementFacade.getMeasurementWithValuesById(id)
 
-    suspend fun saveMeasurement(
-        measurement: Measurement,
-        values: List<MeasurementValue>,
-        silent: Boolean = false,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val result = measurementFacade.saveMeasurement(measurement, values)
-        if (result.isSuccess) {
-            if (!silent) showSnackbar(
-                messageResId = if (measurement.id == 0) R.string.success_measurement_saved
-                else R.string.success_measurement_updated
-            )
-            true
-        } else {
-            if (!silent) showSnackbar(messageResId = R.string.error_saving_measurement)
-            false
+    /**
+     * Fire-and-forget save (insert or edit): owns its coroutine on the internal [viewModelScope] so
+     * it completes even if the edit screen is left (e.g. navigated back) mid-save. The result is
+     * reported via snackbar (which may appear on the previous screen if the user already navigated).
+     */
+    fun saveMeasurement(measurement: Measurement, values: List<MeasurementValue>) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { measurementFacade.saveMeasurement(measurement, values) }
+            val dateStr = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                .format(Date(measurement.timestamp))
+            when {
+                // -1 = (userId, timestamp) duplicate signalled by the use case.
+                result.getOrNull() == -1 ->
+                    showSnackbar(
+                        messageResId = R.string.error_duplicate_timestamp,
+                        formatArgs = listOf(dateStr),
+                    )
+                result.isSuccess -> showSnackbar(
+                    messageResId = if (measurement.id == 0) R.string.success_measurement_saved
+                    else R.string.success_measurement_updated,
+                    formatArgs = listOf(dateStr),
+                )
+                else -> showSnackbar(messageResId = R.string.error_saving_measurement)
+            }
         }
     }
 
-    suspend fun deleteMeasurement(
-        measurement: Measurement,
-        silent: Boolean = false,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val result = measurementFacade.deleteMeasurement(measurement)
-        if (result.isSuccess) {
-            if (!silent) {
-                val fmt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+    /**
+     * Fire-and-forget delete: owns its coroutine on the internal [viewModelScope] so it completes
+     * even if the calling screen is disposed / navigates away immediately afterwards. The result is
+     * reported to the UI via the snackbar event stream (no return value needed).
+     */
+    fun deleteMeasurement(measurement: Measurement) {
+        viewModelScope.launch {
+            // Capture the measurement with its values before deleting, so it can be restored via Undo
+            // (the delete cascades the value rows away).
+            val snapshot = getMeasurementById(measurement.id).first()
+            val result = withContext(Dispatchers.IO) { measurementFacade.deleteMeasurement(measurement) }
+            if (result.isSuccess) {
+                if (_currentMeasurementId.value == measurement.id) _currentMeasurementId.value = null
+                val dateStr = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                    .format(Date(measurement.timestamp))
                 showSnackbar(
                     messageResId = R.string.success_measurement_deleted,
-                    formatArgs   = listOf(fmt.format(Date(measurement.timestamp))),
+                    formatArgs = listOf(dateStr),
+                    actionLabelResId = if (snapshot != null) R.string.action_undo else null,
+                    onAction = snapshot?.let { snap ->
+                        {
+                            // Re-insert as a new measurement; raw values only (derived are recomputed).
+                            viewModelScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    measurementFacade.saveMeasurement(
+                                        snap.measurement.copy(id = 0),
+                                        snap.values.filter { !it.type.isDerived }.map { it.value },
+                                    )
+                                }
+                            }
+                        }
+                    },
+                )
+            } else {
+                showSnackbar(messageResId = R.string.error_deleting_measurement)
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Mutation triggers (UI events) — own their coroutine on the internal viewModelScope so they
+    // complete even if the calling screen is disposed / navigates away. Feedback flows back to the
+    // UI via the existing snackbarEvents stream, not via return values.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Best-effort batch delete: processes every measurement (no early break), counts failures and
+     * reports a summary. Goes through [measurementFacade] directly so it can await per-item results
+     * for the count (the single [deleteMeasurement] is fire-and-forget and shows its own snackbar).
+     */
+    fun deleteMeasurements(measurements: List<Measurement>) {
+        if (measurements.isEmpty()) return
+        viewModelScope.launch {
+            val failed = withContext(Dispatchers.IO) {
+                measurements.count { !measurementFacade.deleteMeasurement(it).isSuccess }
+            }
+            if (failed == 0) {
+                showSnackbar(
+                    messageResId = R.string.snackbar_items_deleted_successfully,
+                    formatArgs = listOf(measurements.size),
+                )
+            } else {
+                showSnackbar(
+                    messageResId = R.string.snackbar_items_delete_partial_failure,
+                    formatArgs = listOf(failed, measurements.size),
+                    duration = SnackbarDuration.Long,
                 )
             }
-            if (_currentMeasurementId.value == measurement.id) _currentMeasurementId.value = null
-            true
-        } else {
-            if (!silent) showSnackbar(messageResId = R.string.error_deleting_measurement)
-            false
+        }
+    }
+
+    /**
+     * Best-effort batch user reassignment: moves every measurement to [newUserId], counts failures
+     * (e.g. a (userId, timestamp) clash with the target user) and reports a summary. Goes through
+     * [measurementFacade] directly so it can await per-item results for the count (the single
+     * [saveMeasurement] is fire-and-forget and shows its own snackbar).
+     */
+    fun changeUserForMeasurements(items: List<MeasurementWithValues>, newUserId: Int) {
+        if (items.isEmpty()) return
+        viewModelScope.launch {
+            val failed = withContext(Dispatchers.IO) {
+                items.count {
+                    // Failed = error (null) or a (userId, timestamp) clash (-1 sentinel) → not moved.
+                    val movedId = measurementFacade.saveMeasurement(
+                        it.measurement.copy(userId = newUserId),
+                        it.values.map { v -> v.value },
+                    ).getOrNull()
+                    movedId == null || movedId <= 0
+                }
+            }
+            if (failed == 0) {
+                showSnackbar(
+                    messageResId = R.string.snackbar_items_user_changed_successfully,
+                    formatArgs = listOf(items.size),
+                )
+            } else {
+                showSnackbar(
+                    messageResId = R.string.snackbar_items_move_partial_failure,
+                    formatArgs = listOf(failed, items.size),
+                    duration = SnackbarDuration.Long,
+                )
+            }
         }
     }
 
@@ -774,7 +883,7 @@ class SharedViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val types = withTimeoutOrNull(10_000) {
+                val types = withTimeoutOrNull(10.seconds) {
                     measurementFacade.getAllMeasurementTypes().first { it.isNotEmpty() }
                 }
                 if (types.isNullOrEmpty()) {
@@ -787,7 +896,7 @@ class SharedViewModel @Inject constructor(
                     return@launch
                 }
 
-                val users = withTimeoutOrNull(10_000) {
+                val users = withTimeoutOrNull(10.seconds) {
                     allUsers.first { it.isNotEmpty() }
                 }
                 if (users.isNullOrEmpty()) {

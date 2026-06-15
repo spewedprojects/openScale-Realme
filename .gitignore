@@ -49,6 +49,12 @@ captures/
 .idea/libraries
 .idea/caches
 app/release/baselineProfiles
+misc_OSR
+
+# Claude Code
+CLAUDE.md
+CLAUDE.local.md
+.claude/
 
 # fastlane
 fastlane/report.xml
@@ -57,3 +63,6 @@ fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
 fastlane/README.md
+
+#kotin
+.kotlin

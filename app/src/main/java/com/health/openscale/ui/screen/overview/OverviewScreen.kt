@@ -22,7 +22,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,10 +88,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale as ComposeLocale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -120,6 +120,7 @@ import com.health.openscale.core.utils.LocaleUtils
 import com.health.openscale.ui.components.LinearGauge
 import com.health.openscale.ui.components.RoundMeasurementIcon
 import com.health.openscale.ui.navigation.Routes
+import com.health.openscale.ui.screen.components.ChartSplitterHandle
 import com.health.openscale.ui.screen.components.MeasurementChart
 import com.health.openscale.ui.screen.components.UserGoalChip
 import com.health.openscale.ui.screen.components.provideFilterTopBarAction
@@ -133,6 +134,7 @@ import com.health.openscale.ui.shared.SharedViewModel
 import com.health.openscale.ui.shared.TopBarAction
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -157,6 +159,7 @@ fun OverviewScreen(
 
     val selectedUserId by sharedViewModel.selectedUserId.collectAsState()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val listState  = rememberLazyListState()
     val scope      = rememberCoroutineScope()
     var highlightedMeasurementId by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -166,7 +169,12 @@ fun OverviewScreen(
         sharedViewModel.observeSplitterWeight(SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT, 0.3f)
     }.collectAsState(initial = 0.3f)
     var localSplitterWeight by remember { mutableStateOf(splitterWeight) }
-    LaunchedEffect(splitterWeight) { localSplitterWeight = splitterWeight }
+    // Last non-collapsed weight, restored when the user taps the handle to show the chart again.
+    var lastExpandedWeight by remember { mutableStateOf(splitterWeight.takeIf { it > 0f } ?: 0.3f) }
+    LaunchedEffect(splitterWeight) {
+        localSplitterWeight = splitterWeight
+        if (splitterWeight > 0f) lastExpandedWeight = splitterWeight
+    }
 
     // ── Aggregation ───────────────────────────────────────────────────────────
     val activeAggregationLevel by rememberResolvedAggregationLevel(
@@ -179,7 +187,7 @@ fun OverviewScreen(
     // Normal mode: screenFlow — cached, reacts to user/time-range/aggregation changes.
     // Drill-down mode: drillDownFlow — uncached, fixed window, always AggregationLevel.NONE.
     val overviewState by if (isDrillDown) {
-        sharedViewModel.drillDownFlow(drillDownStartMillis!!, drillDownEndMillis!!)
+        sharedViewModel.drillDownFlow(drillDownStartMillis, drillDownEndMillis)
             .collectAsStateWithLifecycle(initialValue = SharedViewModel.UiState.Loading)
     } else {
         sharedViewModel.screenFlow(SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT)
@@ -269,9 +277,8 @@ fun OverviewScreen(
         DeleteConfirmationDialog(
             onDismissRequest = { measurementToDelete = null },
             onConfirm        = {
-                scope.launch {
-                    sharedViewModel.deleteMeasurement(enrichedItem.measurementWithValues.measurement)
-                }
+                // VM owns the coroutine → completes even if the screen changes.
+                sharedViewModel.deleteMeasurement(enrichedItem.measurementWithValues.measurement)
                 measurementToDelete = null
             },
             title = stringResource(R.string.dialog_title_delete_item),
@@ -285,11 +292,11 @@ fun OverviewScreen(
         fun updateTopBar() {
             if (isDrillDown) {
                 val fmt = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
-                val title = "${fmt.format(Date(drillDownStartMillis!!))} – ${fmt.format(Date(drillDownEndMillis!! - 1))}"
+                val title = "${fmt.format(Date(drillDownStartMillis))} – ${fmt.format(Date(drillDownEndMillis - 1))}"
                 sharedViewModel.setTopBarTitle(title)
                 sharedViewModel.setTopBarActions(emptyList())
             } else {
-                sharedViewModel.setTopBarTitle(context.getString(R.string.route_title_overview))
+                sharedViewModel.setTopBarTitle(resources.getString(R.string.route_title_overview))
                 val actions = mutableListOf<TopBarAction>()
                 actions.add(bluetoothAction)
                 actions.add(addMeasurementAction)
@@ -350,19 +357,19 @@ fun OverviewScreen(
                                 ?.enriched?.measurementWithValues?.measurement?.id
                             LaunchedEffect(topId, aggregatedItems.size) {
                                 if (topId != null && !listState.isScrollInProgress) {
-                                    delay(60)
+                                    delay(60.milliseconds)
                                     listState.smartScrollTo(0)
                                 }
                             }
 
                             // ── Chart + divider + goals (hidden in drill-down) ────────
                             if (!isDrillDown) {
-                                Box(modifier = Modifier.weight(localSplitterWeight)) {
+                                if (localSplitterWeight > 0f) Box(modifier = Modifier.weight(localSplitterWeight)) {
                                     MeasurementChart(
                                         sharedViewModel   = sharedViewModel,
                                         screenContextName = SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT,
                                         showFilterControls = true,
-                                        modifier          = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                        modifier          = Modifier.fillMaxWidth(),
                                         showYAxis         = false,
                                         onPointSelected   = { selectedTs ->
                                             if (isAggregated) {
@@ -379,7 +386,7 @@ fun OverviewScreen(
                                                         highlightedMeasurementId =
                                                             aggregatedItems[idx].enriched.measurementWithValues.measurement.id
                                                         currentSelectedAggregatedTs = itemTs
-                                                        delay(600)
+                                                        delay(600.milliseconds)
                                                         highlightedMeasurementId = null
                                                     }
                                                 }
@@ -395,7 +402,7 @@ fun OverviewScreen(
                                                             listState.smartScrollTo(targetIndex)
                                                             highlightedMeasurementId          = targetId
                                                             currentSelectedMeasurementId      = targetId
-                                                            delay(600)
+                                                            delay(600.milliseconds)
                                                             if (highlightedMeasurementId == targetId)
                                                                 highlightedMeasurementId = null
                                                         }
@@ -405,35 +412,40 @@ fun OverviewScreen(
                                     )
                                 }
 
-                                // Draggable divider
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .pointerInput(Unit) {
-                                            detectDragGestures(
-                                                onDrag    = { change, dragAmount ->
-                                                    change.consume()
-                                                    localSplitterWeight =
-                                                        (localSplitterWeight + dragAmount.y / 2000f)
-                                                            .coerceIn(0.01f, 0.8f)
-                                                },
-                                                onDragEnd = {
-                                                    scope.launch {
-                                                        sharedViewModel.setSplitterWeight(
-                                                            SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT,
-                                                            localSplitterWeight,
-                                                        )
-                                                    }
-                                                },
+                                // Draggable + tappable splitter handle (drag = resize, tap = collapse/show).
+                                // Top padding lives on the handle (not the chart) so the spacing is
+                                // kept even when the chart is collapsed and not rendered. The bottom
+                                // gap comes from the goals/list top padding.
+                                ChartSplitterHandle(
+                                    modifier  = Modifier.padding(top = 8.dp),
+                                    collapsed = localSplitterWeight <= 0f,
+                                    onDrag = { dy ->
+                                        localSplitterWeight =
+                                            (localSplitterWeight + dy / 2000f).coerceIn(0f, 0.8f)
+                                    },
+                                    onDragEnd = {
+                                        scope.launch {
+                                            sharedViewModel.setSplitterWeight(
+                                                SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT,
+                                                localSplitterWeight,
                                             )
-                                        },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    HorizontalDivider(
-                                        thickness = 1.dp,
-                                        color     = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                    )
-                                }
+                                        }
+                                    },
+                                    onToggleCollapse = {
+                                        localSplitterWeight = if (localSplitterWeight > 0f) {
+                                            lastExpandedWeight = localSplitterWeight
+                                            0f
+                                        } else {
+                                            lastExpandedWeight.takeIf { it > 0f } ?: 0.3f
+                                        }
+                                        scope.launch {
+                                            sharedViewModel.setSplitterWeight(
+                                                SettingsPreferenceKeys.OVERVIEW_SCREEN_CONTEXT,
+                                                localSplitterWeight,
+                                            )
+                                        }
+                                    },
+                                )
 
                                 // Goals section
                                 if (userGoals.isNotEmpty()) {
@@ -489,7 +501,11 @@ fun OverviewScreen(
                                                         userGoals,
                                                         key = { goal -> "${goal.userId}_${goal.measurementTypeId}" },
                                                     ) { goal ->
-                                                        if (goal.userId == currentSelectedUser!!.id) {
+                                                        // Local copy: currentSelectedUser comes from a separate
+                                                        // flow than userGoals and may still be null while the user
+                                                        // is being switched — avoid the !! NPE.
+                                                        val selectedUser = currentSelectedUser
+                                                        if (selectedUser != null && goal.userId == selectedUser.id) {
                                                             val measurementType = typeById[goal.measurementTypeId]
                                                             if (measurementType != null) {
                                                                 UserGoalChip(
@@ -497,8 +513,9 @@ fun OverviewScreen(
                                                                     measurementType      = measurementType,
                                                                     referenceMeasurement = goalReferenceMeasurement,
                                                                     onClick              = {
-                                                                        if (currentSelectedUser!!.id != 0 &&
-                                                                            goal.userId == currentSelectedUser!!.id
+                                                                        val user = currentSelectedUser
+                                                                        if (user != null && user.id != 0 &&
+                                                                            goal.userId == user.id
                                                                         ) {
                                                                             sharedViewModel.showUserGoalDialogWithContext(
                                                                                 type         = measurementType,
@@ -596,7 +613,7 @@ fun OverviewScreen(
                                             rawCount                   = aggItem.aggregatedFromCount,
                                             aggregatedPeriodLabel      = activeAggregationLevel.periodLabel(
                                                 timestamp            = ts,
-                                                calendarWeekAbbrev  = context.getString(R.string.calendar_week_abbrev),
+                                                calendarWeekAbbrev  = stringResource(R.string.calendar_week_abbrev),
                                             ),
                                         )
                                     } else {
@@ -610,12 +627,14 @@ fun OverviewScreen(
                                                     enrichedItem.measurementWithValues.measurement.id
                                             },
                                             onEdit                    = {
-                                                navController.navigate(
-                                                    Routes.measurementDetail(
-                                                        enrichedItem.measurementWithValues.measurement.id,
-                                                        selectedUserId!!,
+                                                selectedUserId?.let { userId ->
+                                                    navController.navigate(
+                                                        Routes.measurementDetail(
+                                                            enrichedItem.measurementWithValues.measurement.id,
+                                                            userId,
+                                                        )
                                                     )
-                                                )
+                                                }
                                             },
                                             onDelete                  = { measurementToDelete = aggItem },
                                             isHighlighted             = (highlightedMeasurementId ==
@@ -696,7 +715,7 @@ fun OverviewScreen(
                                 ?.getDisplayName(context) ?: "Value"
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.toast_invalid_number_format_short, typeName),
+                                resources.getString(R.string.toast_invalid_number_format_short, typeName),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -751,9 +770,10 @@ fun MeasurementCard(
     val headerLabel = if (isAggregated) {
         "$aggregatedPeriodLabel ($rawCount)"
     } else {
-        remember(measurementWithValues.measurement.timestamp, Locale.getDefault()) {
-            val ts     = measurementWithValues.measurement.timestamp
-            val locale = Locale.getDefault()
+        // Read the locale observably so the label recomposes on locale changes.
+        val locale = ComposeLocale.current.platformLocale
+        remember(measurementWithValues.measurement.timestamp, locale) {
+            val ts = measurementWithValues.measurement.timestamp
             "${DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(Date(ts))} " +
                     DateFormat.getTimeInstance(DateFormat.SHORT, locale).format(Date(ts))
         }
@@ -785,7 +805,7 @@ fun MeasurementCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier          = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+                    .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
             ) {
                 Text(
                     text     = headerLabel,
@@ -840,7 +860,7 @@ fun MeasurementCard(
                 modifier = Modifier.padding(
                     start   = 16.dp,
                     end     = 16.dp,
-                    top     = if (pinnedValues.isNotEmpty()) 8.dp else 0.dp,
+                    top     = if (pinnedValues.isNotEmpty()) 4.dp else 0.dp,
                     bottom  = 0.dp,
                 ),
             ) {
@@ -884,8 +904,9 @@ fun MeasurementCard(
                 if (isExpanded || pinnedValues.isNotEmpty()) {
                     HorizontalDivider(
                         modifier = Modifier.padding(
-                            top    = if (isExpanded && nonPinnedValues.isNotEmpty()) 4.dp
-                            else if (pinnedValues.isNotEmpty()) 8.dp else 0.dp,
+                            // nonPinnedValues is non-empty here; when collapsed, the outer
+                            // conditions guarantee pinnedValues is non-empty.
+                            top    = if (isExpanded) 4.dp else 8.dp,
                             bottom = 0.dp,
                         ),
                     )
@@ -915,7 +936,7 @@ fun MeasurementCard(
                 )
             }
             if (pinnedValues.isNotEmpty() && nonPinnedValues.isEmpty() && allActiveProcessedValues.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
@@ -1006,7 +1027,7 @@ fun MeasurementValueRow(
                     maxLines = 1,
                 )
                 if (difference != null && trend != Trend.NOT_APPLICABLE) {
-                    Spacer(modifier = Modifier.height(1.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val trendIconVector = when (trend) {
                             Trend.UP   -> Icons.Filled.ArrowUpward
@@ -1179,23 +1200,23 @@ fun MeasurementRowExpandable(
                             MeasurementTypeKey.WAIST                          -> UnitType.CM
                             else                                               -> UnitType.PERCENT
                         }
+                        // The noAgeBand branch above already handled negative limits,
+                        // so lowLimit/highLimit are guaranteed to be >= 0 here.
                         if (baseUnit != targetUnit) {
                             Triple(
                                 ConverterUtils.convertFloatValueUnit(evalResult.value, baseUnit, targetUnit),
-                                if (evalResult.lowLimit >= 0f)
-                                    ConverterUtils.convertFloatValueUnit(evalResult.lowLimit, baseUnit, targetUnit)
-                                else null,
+                                ConverterUtils.convertFloatValueUnit(evalResult.lowLimit, baseUnit, targetUnit),
                                 ConverterUtils.convertFloatValueUnit(evalResult.highLimit, baseUnit, targetUnit),
                             )
                         } else {
                             Triple(
                                 evalResult.value,
-                                if (evalResult.lowLimit < 0f) null else evalResult.lowLimit,
+                                evalResult.lowLimit,
                                 evalResult.highLimit,
                             )
                         }
                     }
-                    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 2.dp)) {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)) {
                         LinearGauge(
                             value         = displayValue,
                             lowLimit      = displayLow,
