@@ -1,6 +1,7 @@
 &nbsp; <img src="https://github.com/oliexdev/openScale/blob/master/fastlane/metadata/android/en-GB/images/icon.png" alt="openScale logo" height="60"/> &nbsp;openScale [![CI](https://github.com/oliexdev/openScale/actions/workflows/ci_master.yml/badge.svg)](https://github.com/oliexdev/openScale/actions/workflows/ci_master.yml)
-[![Translation status](https://hosted.weblate.org/widgets/openscale/-/strings/svg-badge.svg)](https://hosted.weblate.org/engage/openscale/?utm_source=widget)
 =========
+
+**_All translations removed in the fork._**
 
 Open-source weight and body metrics tracker, with support for Bluetooth scales
 
@@ -28,24 +29,8 @@ Monitor and track your weight, BMI, body fat, body water, muscle and other body 
 
 # Supported Bluetooth scales :rocket:
 openScale has built-in support for a number of Bluetooth (BLE or "smart") scales from  many manufacturers, e.g. Beurer, Sanitas, Yunmai, Xiaomi, etc. (see model list below). Together with our users we constantly improve and extend the set of supported scales and in many cases pick up where the original app falls short.
-
-- Custom made Bluetooth scale
-- Beurer BF700, BF710, BF800, BF105, BF720, BF600, BF850 and BF950
-- Digoo DG-S038H
-- Excelvan CF369BLE
-- Exingtech Y1
-- Hesley (Yunchen)
-- MGB
-- Medisana BS444, BS440
-- Runtastic Libra
-- Sanitas SBF70
-- Silvercrest SBF75, SBF77
-- Vigorun
-- Xiaomi Mi scale v1 and v2
-- Yunmai Mini and SE
-- iHealth HS3
-- Easy Home 64050
-- and many more
+This fork strips support for any other Bluetooth scale.
+- **RealMe Scale**
 
 Please see [openScale wikipage](https://github.com/oliexdev/openScale/wiki/Supported-scales-in-openScale) for the full list and the level of support for each scale.
 
@@ -76,6 +61,8 @@ This app has no ads and requests no unnecessary permissions. The location permis
 openScale doesn't send any data to a cloud and not having permission to access the internet is a strong guarantee of that.
 
 If you want to synchronize your openScale measurements with external services, you can install [openScale sync](https://github.com/oliexdev/openScale-sync).
+
+### **_The fork retains the offline capability of the original but adds extra support for Google Health Connect only to write data._**
 
 # Questions & Issues :thinking:
 
