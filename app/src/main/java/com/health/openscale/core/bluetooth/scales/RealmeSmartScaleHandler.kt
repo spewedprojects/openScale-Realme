@@ -145,7 +145,7 @@ class RealmeSmartScaleHandler : ScaleDeviceHandler() {
 
             if (fatPct > 0f) {
                 measurement.fat = fatPct
-                measurement.muscle = calc.getMuscle(fatPct) / weightKg * 100.0f
+                measurement.muscle = calc.getMuscle(fatPct)
                 measurement.water = calc.getWater(fatPct)
                 measurement.bone = calc.getBoneMass(measurement.muscle, weightKg)
                 measurement.lbm = calc.getLeanBodyMass(weightKg, fatPct)

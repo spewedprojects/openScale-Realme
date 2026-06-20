@@ -1,7 +1,7 @@
 &nbsp; <img src="https://github.com/oliexdev/openScale/blob/master/fastlane/metadata/android/en-GB/images/icon.png" alt="openScale logo" height="60"/> &nbsp;openScale [![CI](https://github.com/oliexdev/openScale/actions/workflows/ci_master.yml/badge.svg)](https://github.com/oliexdev/openScale/actions/workflows/ci_master.yml)
 =========
 
-**_All translations removed in the fork._**
+**_All translations removed in this fork._**
 
 Open-source weight and body metrics tracker, with support for Bluetooth scales
 
@@ -29,8 +29,8 @@ Monitor and track your weight, BMI, body fat, body water, muscle and other body 
 
 # Supported Bluetooth scales :rocket:
 openScale has built-in support for a number of Bluetooth (BLE or "smart") scales from  many manufacturers, e.g. Beurer, Sanitas, Yunmai, Xiaomi, etc. (see model list below). Together with our users we constantly improve and extend the set of supported scales and in many cases pick up where the original app falls short.
-This fork strips support for any other Bluetooth scale.
-- **RealMe Scale**
+
+### This fork strips support for any other Bluetooth scale and only supports: **RealMe Scale**
 
 Please see [openScale wikipage](https://github.com/oliexdev/openScale/wiki/Supported-scales-in-openScale) for the full list and the level of support for each scale.
 
