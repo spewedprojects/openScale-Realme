@@ -29,13 +29,21 @@ android {
         applicationId = "com.health.openscale"
         minSdk = 31
         targetSdk = 37
-        versionCode = 79
-        versionName = "3.1.1-Realme-1.5.0"
+        versionCode = 80
+        versionName = "3.1.1-Realme-1.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appName"] = "openScale RealMe"
         manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_round"
+        
+        // Strip out non-English locales to save space
+        resConfigs("en")
+        
+        // Bundle native libraries ONLY for 64-bit ARM
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
     }
 
     signingConfigs {
@@ -104,7 +112,7 @@ android {
         }
 
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release") // Temporarily use debug signing to test release build locally
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

@@ -2,6 +2,7 @@
 # *.apk
 *.ap_
 *.abb
+*.json
 
 # Files for the Dalvik VM
 *.dex

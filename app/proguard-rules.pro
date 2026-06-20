@@ -2,11 +2,9 @@
 # Global Rules: Allow Shrinking, but prevent Obfuscation (Renaming)
 # ##################################################################################
 
-# These rules are key. They instruct ProGuard to keep the original names of all
-# classes, interfaces, enums, fields, and methods.
-# This effectively disables obfuscation while still allowing code shrinking to work.
--keepnames class * { *; }
--keepclassmembernames class * { *; }
+# Explicitly keep all Enum names and values to prevent breakage when serializing
+# to DataStore/SharedPreferences or the Room Database via .name() / valueOf()
+-keepclassmembers enum com.health.openscale.** { *; }
 
 # ##################################################################################
 # Keep important metadata for libraries and debugging
