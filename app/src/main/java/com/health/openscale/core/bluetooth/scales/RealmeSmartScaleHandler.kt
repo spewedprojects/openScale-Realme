@@ -138,19 +138,25 @@ class RealmeSmartScaleHandler : ScaleDeviceHandler() {
         if (impedance > 0) {
             measurement.impedance = impedance.toDouble()
 
+            val calc = com.health.openscale.core.bluetooth.libs.StandardImpedanceLib(
+                gender = user.gender,
+                age = user.age,
+                weightKg = weightKg.toDouble(),
+                heightM = user.bodyHeight.toDouble() / 100.0,
+                impedance = impedance.toDouble()
+            )
+
+            measurement.fat = calc.totalFatPercentage.toFloat()
+            measurement.muscle = calc.skeletalMuscleMassKg.toFloat()
+            measurement.water = calc.totalBodyWaterPercentage.toFloat()
+            measurement.bone = calc.boneMassKg.toFloat()
+            measurement.lbm = calc.fatFreeMassKg.toFloat()
+            measurement.bmr = calc.basalMetabolicRate.toFloat()
+
+            // StandardImpedanceLib has no visceral fat model; keep YunmaiLib for that one metric only
             val sex = if (user.gender.isMale()) 1 else 0
-            val calc = com.health.openscale.core.bluetooth.libs.YunmaiLib(sex, user.bodyHeight, user.activityLevel)
-
-            val fatPct = calc.getFat(user.age, weightKg, impedance)
-
-            if (fatPct > 0f) {
-                measurement.fat = fatPct
-                measurement.muscle = calc.getMuscle(fatPct)
-                measurement.water = calc.getWater(fatPct)
-                measurement.bone = calc.getBoneMass(measurement.muscle, weightKg)
-                measurement.lbm = calc.getLeanBodyMass(weightKg, fatPct)
-                measurement.visceralFat = calc.getVisceralFat(fatPct, user.age)
-            }
+            val visceralCalc = com.health.openscale.core.bluetooth.libs.YunmaiLib(sex, user.bodyHeight, user.activityLevel)
+            measurement.visceralFat = visceralCalc.getVisceralFat(calc.totalFatPercentage.toFloat(), user.age)
         }
 
         LogManager.i(TAG, "Measurement: Weight=$weightKg kg, Fat=${measurement.fat}%, Date=${measurement.dateTime}")
