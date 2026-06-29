@@ -138,18 +138,20 @@ class RealmeSmartScaleHandler : ScaleDeviceHandler() {
         if (impedance > 0) {
             measurement.impedance = impedance.toDouble()
 
-            val sex = if (user.gender.isMale()) 1 else 0
-            val calc = com.health.openscale.core.bluetooth.libs.YunmaiLib(sex, user.bodyHeight, user.activityLevel)
+            val sexVal = if (user.gender.isMale()) 1 else 2
+            val calc = com.health.openscale.core.bluetooth.libs.RealmeTuyaLib(sexVal, user.bodyHeight, user.age)
 
-            val fatPct = calc.getFat(user.age, weightKg, impedance)
+            val res = calc.calculate(weightKg, impedance.toFloat())
 
-            if (fatPct > 0f) {
-                measurement.fat = fatPct
-                measurement.muscle = calc.getMuscle(fatPct)
-                measurement.water = calc.getWater(fatPct)
-                measurement.bone = calc.getBoneMass(measurement.muscle, weightKg)
-                measurement.lbm = calc.getLeanBodyMass(weightKg, fatPct)
-                measurement.visceralFat = calc.getVisceralFat(fatPct, user.age)
+            if (res.fat > 0f) {
+                measurement.fat = res.fat
+                measurement.water = res.water
+                measurement.muscle = (res.muscle / weightKg) * 100.0f // convert muscle mass (kg) to percentage
+                measurement.bone = res.bone
+                measurement.lbm = weightKg - (weightKg * res.fat / 100.0f) // LBM = Weight - Fat Mass
+                measurement.visceralFat = res.visceralFat
+                measurement.bmr = res.bmr
+                measurement.protein = res.protein
             }
         }
 
